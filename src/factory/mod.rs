@@ -1,6 +1,6 @@
 use general_stable_vec::interface::StableVecIndex;
 
-use crate::{recipe::Recipe, time::DateTime, ware::WareAmount, warehouse::Warehouse};
+use crate::{money::Money, recipe::Recipe, time::DateTime, warehouse::Warehouse};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FactoryId(usize);
@@ -10,14 +10,19 @@ pub struct Factory {
     recipe: Recipe,
     input_storage: Warehouse,
     output_storage: Warehouse,
+    hourly_wages: Money,
+    money: Money,
 }
 
 impl Factory {
-    pub fn new(recipe: Recipe) -> Self {
+    pub fn new(recipe: Recipe, hourly_wages: Money) -> Self {
+        assert!(hourly_wages % recipe.rate().per_hour() == Money::ZERO);
         Self {
             recipe,
             input_storage: Default::default(),
             output_storage: Default::default(),
+            hourly_wages,
+            money: Money::ZERO,
         }
     }
 
@@ -42,9 +47,19 @@ impl Factory {
                 }
             },
         );
+        let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
 
         // Apply recipe.
-        todo!()
+        for input in self.recipe.inputs() {
+            self.input_storage
+                .remove_ware(input * recipe_application_amount);
+        }
+        for output in self.recipe.outputs() {
+            self.output_storage.insert_ware(
+                *output * recipe_application_amount,
+                self.hourly_wages * duration,
+            );
+        }
     }
 }
 

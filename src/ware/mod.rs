@@ -36,6 +36,22 @@ impl Mul<u64> for WareAmount {
     }
 }
 
+impl Mul<u64> for &'_ WareAmount {
+    type Output = WareAmount;
+
+    fn mul(self, rhs: u64) -> Self::Output {
+        *self * rhs
+    }
+}
+
+impl Mul<u64> for &'_ mut WareAmount {
+    type Output = WareAmount;
+
+    fn mul(self, rhs: u64) -> Self::Output {
+        *self * rhs
+    }
+}
+
 impl Div for WareAmount {
     type Output = u64;
 

@@ -44,6 +44,10 @@ impl ProductionRate {
     pub fn new(per_hour: u64) -> Self {
         Self { per_hour }
     }
+
+    pub fn per_hour(&self) -> u64 {
+        self.per_hour
+    }
 }
 
 impl Mul<DateTime> for ProductionRate {
