@@ -1,9 +1,18 @@
+use factory::Factory;
 use log::info;
+use recipe::{ProductionRate, Recipe};
 use simplelog::TermLogger;
+use ware::{Ware, WareAmount};
+use world::World;
 
-mod recipes;
+mod factory;
+mod market;
+mod money;
+mod recipe;
 mod time;
-mod wares;
+mod ware;
+mod warehouse;
+mod world;
 
 fn main() {
     TermLogger::init(
@@ -14,5 +23,33 @@ fn main() {
     )
     .unwrap();
 
-    info!("Hello, world!");
+    info!("Creating world");
+    let mut world = World::new([
+        Factory::new(Recipe::new(
+            [],
+            [WareAmount::new(Ware::Water, 1)],
+            ProductionRate::new(1000),
+        )),
+        Factory::new(Recipe::new(
+            [],
+            [WareAmount::new(Ware::Seed, 1)],
+            ProductionRate::new(1),
+        )),
+        Factory::new(Recipe::new(
+            [
+                WareAmount::new(Ware::Water, 100),
+                WareAmount::new(Ware::Seed, 1),
+            ],
+            [
+                WareAmount::new(Ware::Apple, 10),
+                WareAmount::new(Ware::Seed, 2),
+            ],
+            ProductionRate::new(10),
+        )),
+    ]);
+
+    info!("Advancing hour");
+    world.advance_hour();
+
+    info!("World:\n{world:?}");
 }

@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 log = "0.4.22"
 simplelog = "0.12.2"
-general_stable_vec = "0.11.1"
+general_stable_vec = "0.12.0"

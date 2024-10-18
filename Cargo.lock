@@ -22,9 +22,9 @@ dependencies = [
 
 [[package]]
 name = "general_stable_vec"
-version = "0.11.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff09737bce0712907207dfed7f742e0938e78921e2f3b1d12fc4bbb5edd73dcb"
+checksum = "96d081da6af5b2f041b349c8e1a342aac99976919d06e1ba7e6cb0af54e5c5e0"
 dependencies = [
  "thiserror",
 ]
