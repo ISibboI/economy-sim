@@ -1,4 +1,5 @@
 use general_stable_vec::{implementation::option_vec::OptionStableVec, interface::StableVec};
+use log::debug;
 use rand::Rng;
 
 use crate::{
@@ -24,6 +25,8 @@ impl World {
     }
 
     pub fn advance_hour(&mut self, rng: &mut impl Rng) {
+        debug!("Advancing world by one hour");
+
         // Advance time
         self.time.increment();
 

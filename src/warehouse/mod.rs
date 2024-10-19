@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    fmt::Display,
+};
 
 use crate::{
     money::ApproximateMoney,
@@ -148,5 +151,23 @@ impl WarehouseBatch {
 
     pub fn sourcing_cost_per_item(&self) -> ApproximateMoney {
         self.sourcing_cost_per_item
+    }
+}
+
+impl Display for Warehouse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Warehouse {{")?;
+        let mut once = true;
+        for (ware, entry) in &self.wares {
+            if once {
+                once = false;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            let ware_amount = WareAmount::new(*ware, entry.total_amount);
+            write!(f, "{ware_amount}")?;
+        }
+        write!(f, "}}")
     }
 }

@@ -19,7 +19,7 @@ mod world;
 
 fn main() {
     TermLogger::init(
-        log::LevelFilter::Info,
+        log::LevelFilter::Debug,
         Default::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
@@ -31,8 +31,8 @@ fn main() {
         Factory::new(
             Recipe::new(
                 [],
-                [WareAmount::new(Ware::Water, 1)],
-                ProductionRate::new(1000),
+                [WareAmount::new(Ware::Water, 10)],
+                ProductionRate::new(100),
             ),
             Money::from(100),
         ),

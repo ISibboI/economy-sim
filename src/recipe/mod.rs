@@ -1,4 +1,4 @@
-use std::ops::Mul;
+use std::{fmt::Display, ops::Mul};
 
 use crate::{time::DateTime, ware::WareAmount};
 
@@ -55,5 +55,39 @@ impl Mul<DateTime> for ProductionRate {
 
     fn mul(self, rhs: DateTime) -> Self::Output {
         self.per_hour * rhs.into_hours()
+    }
+}
+
+impl Display for Recipe {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Recipe {{rate: {}, recipe: (", self.rate)?;
+        let mut once = true;
+        for input in &self.inputs {
+            if once {
+                once = false;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            write!(f, "{input}")?;
+        }
+        write!(f, ") -> (")?;
+        once = true;
+        for output in &self.outputs {
+            if once {
+                once = false;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            write!(f, "{output}")?;
+        }
+        write!(f, ")}}")
+    }
+}
+
+impl Display for ProductionRate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}/h", self.per_hour)
     }
 }

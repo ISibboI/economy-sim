@@ -1,4 +1,7 @@
-use std::ops::{Div, Mul};
+use std::{
+    fmt::Display,
+    ops::{Div, Mul},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Ware {
@@ -58,5 +61,27 @@ impl Div for WareAmount {
     fn div(self, rhs: Self) -> Self::Output {
         assert_eq!(self.ware, rhs.ware);
         self.amount.checked_div(rhs.amount).unwrap()
+    }
+}
+
+impl Display for Ware {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Ware::Water => write!(f, "water"),
+            Ware::Seed => write!(f, "seed"),
+            Ware::Apple => write!(f, "apple"),
+        }
+    }
+}
+
+impl Display for WareAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {}{}",
+            self.amount,
+            self.ware,
+            if self.amount != 1 { "s" } else { "" },
+        )
     }
 }

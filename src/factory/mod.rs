@@ -1,4 +1,5 @@
 use general_stable_vec::interface::StableVecIndex;
+use log::debug;
 
 use crate::{
     market::Market,
@@ -38,6 +39,11 @@ impl Factory {
     }
 
     pub fn produce(&mut self, duration: DateTime) {
+        debug!(
+            "Factory with recipe {} produces for {duration} with {} and inputs {}",
+            self.recipe, self.money, self.input_storage
+        );
+
         // Compute available recipe applications.
         let maximum_recipe_application_amount = self.recipe.rate() * duration;
         let recipe_application_amount = self
@@ -60,22 +66,26 @@ impl Factory {
                 },
             )
             .min(self.money / self.hourly_wages);
+        debug!("Executing the recipe {recipe_application_amount} times");
 
-        let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
-        let wages = self.hourly_wages * duration;
-        self.money -= wages;
-        let mut sourcing_cost_per_item = ApproximateMoney::from(wages) / recipe_application_amount;
+        if recipe_application_amount > 0 {
+            let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
+            let wages = self.hourly_wages * duration;
+            self.money -= wages;
+            let mut sourcing_cost_per_item =
+                ApproximateMoney::from(wages) / recipe_application_amount;
 
-        // Apply recipe.
-        for input in self.recipe.inputs() {
-            sourcing_cost_per_item += self
-                .input_storage
-                .remove_ware(input * recipe_application_amount)
-                * input.amount();
-        }
-        for output in self.recipe.outputs() {
-            self.output_storage
-                .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);
+            // Apply recipe.
+            for input in self.recipe.inputs() {
+                sourcing_cost_per_item += self
+                    .input_storage
+                    .remove_ware(input * recipe_application_amount)
+                    * input.amount();
+            }
+            for output in self.recipe.outputs() {
+                self.output_storage
+                    .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);
+            }
         }
     }
 
@@ -102,8 +112,6 @@ impl Factory {
                 &mut self.money,
             );
         }
-
-        todo!()
     }
 
     pub fn collect_money(&mut self, market: &mut Market, factory_id: FactoryId) {
