@@ -1,9 +1,11 @@
 use general_stable_vec::interface::StableVecIndex;
 
 use crate::{
+    market::Market,
     money::{ApproximateMoney, Money},
     recipe::Recipe,
     time::DateTime,
+    ware::WareAmount,
     warehouse::Warehouse,
 };
 
@@ -75,6 +77,32 @@ impl Factory {
             self.output_storage
                 .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);
         }
+    }
+
+    pub fn offer_outputs(&mut self, market: &mut Market, factory_id: FactoryId) {
+        for batch in self.output_storage.drain() {
+            market.offer(
+                batch.ware(),
+                batch.amount(),
+                (f64::from(batch.sourcing_cost_per_item() + 0.5).ceil() as u64).into(),
+                factory_id,
+            );
+        }
+    }
+
+    pub fn buy_inputs(&mut self, market: &mut Market) {
+        let recipe_production_per_hour = self.recipe.rate().per_hour();
+        for input in self.recipe.inputs() {
+            let required_amount = input.amount() * recipe_production_per_hour;
+            let available_amount = self.input_storage.ware_amount(input.ware()).amount();
+            let missing_amount = required_amount.saturating_sub(available_amount);
+            market.buy(
+                WareAmount::new(input.ware(), missing_amount),
+                &mut self.input_storage,
+            );
+        }
+
+        todo!()
     }
 }
 

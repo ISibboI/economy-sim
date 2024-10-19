@@ -11,22 +11,22 @@ pub struct Warehouse {
 }
 
 #[derive(Debug)]
-pub struct WarehouseEntry {
+struct WarehouseEntry {
     total_amount: u64,
-    batches: VecDeque<WarehouseBatch>,
+    batches: VecDeque<PartialWarehouseBatch>,
 }
 
 #[derive(Debug)]
-pub struct WarehouseBatch {
+struct PartialWarehouseBatch {
     sourcing_cost_per_item: ApproximateMoney,
     amount: u64,
 }
 
 #[derive(Debug)]
-pub struct WareGroupRemoveIterator<'warehouse, 'group> {
-    warehouse: &'warehouse mut Warehouse,
-    group: &'group [WareAmount],
+pub struct WarehouseBatch {
+    ware: Ware,
     amount: u64,
+    sourcing_cost_per_item: ApproximateMoney,
 }
 
 impl Warehouse {
@@ -60,13 +60,22 @@ impl Warehouse {
         }
         result
     }
+
+    pub fn drain(&mut self) -> impl use<'_> + Iterator<Item = WarehouseBatch> {
+        self.wares.drain().flat_map(|(ware, entry)| {
+            entry
+                .batches
+                .into_iter()
+                .map(move |partial_batch| partial_batch.into_batch(ware))
+        })
+    }
 }
 
 impl WarehouseEntry {
     pub fn new(amount: u64, sourcing_cost_per_item: ApproximateMoney) -> Self {
         Self {
             total_amount: amount,
-            batches: [WarehouseBatch {
+            batches: [PartialWarehouseBatch {
                 sourcing_cost_per_item,
                 amount,
             }]
@@ -85,7 +94,7 @@ impl WarehouseEntry {
 
     pub fn insert(&mut self, amount: u64, sourcing_cost_per_item: ApproximateMoney) {
         self.total_amount = self.total_amount.checked_add(amount).unwrap();
-        self.batches.push_back(WarehouseBatch {
+        self.batches.push_back(PartialWarehouseBatch {
             sourcing_cost_per_item,
             amount,
         });
@@ -115,5 +124,29 @@ impl WarehouseEntry {
         }
 
         total_sourcing_cost / total_removed_amount
+    }
+}
+
+impl PartialWarehouseBatch {
+    pub fn into_batch(self, ware: Ware) -> WarehouseBatch {
+        WarehouseBatch {
+            ware,
+            amount: self.amount,
+            sourcing_cost_per_item: self.sourcing_cost_per_item,
+        }
+    }
+}
+
+impl WarehouseBatch {
+    pub fn ware(&self) -> Ware {
+        self.ware
+    }
+
+    pub fn amount(&self) -> u64 {
+        self.amount
+    }
+
+    pub fn sourcing_cost_per_item(&self) -> ApproximateMoney {
+        self.sourcing_cost_per_item
     }
 }

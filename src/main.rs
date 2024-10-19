@@ -1,6 +1,8 @@
 use factory::Factory;
 use log::info;
 use money::Money;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 use recipe::{ProductionRate, Recipe};
 use simplelog::TermLogger;
 use ware::{Ware, WareAmount};
@@ -54,8 +56,11 @@ fn main() {
         ),
     ]);
 
+    info!("Creating rng");
+    let mut rng = Xoshiro256PlusPlus::from_entropy();
+
     info!("Advancing hour");
-    world.advance_hour();
+    world.advance_hour(&mut rng);
 
     info!("World:\n{world:?}");
 }

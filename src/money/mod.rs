@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{AddAssign, Div, Mul, Rem, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, Rem, SubAssign},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -69,6 +69,12 @@ impl From<f64> for ApproximateMoney {
     }
 }
 
+impl From<ApproximateMoney> for f64 {
+    fn from(value: ApproximateMoney) -> Self {
+        value.0
+    }
+}
+
 impl From<ApproximateMoney> for Money {
     fn from(value: ApproximateMoney) -> Self {
         Self(value.0.round() as u64)
@@ -94,6 +100,14 @@ impl Div<u64> for ApproximateMoney {
 
     fn div(self, rhs: u64) -> Self::Output {
         Self(self.0 / rhs as f64)
+    }
+}
+
+impl Add<f64> for ApproximateMoney {
+    type Output = ApproximateMoney;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        Self(self.0 + rhs)
     }
 }
 
