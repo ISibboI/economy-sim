@@ -1,6 +1,11 @@
 use general_stable_vec::interface::StableVecIndex;
 
-use crate::{money::Money, recipe::Recipe, time::DateTime, warehouse::Warehouse};
+use crate::{
+    money::{ApproximateMoney, Money},
+    recipe::Recipe,
+    time::DateTime,
+    warehouse::Warehouse,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FactoryId(usize);
@@ -48,17 +53,18 @@ impl Factory {
             },
         );
         let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
+        let wages = self.hourly_wages * duration;
+        let mut sourcing_cost_per_item = ApproximateMoney::from(wages) / recipe_application_amount;
 
         // Apply recipe.
         for input in self.recipe.inputs() {
-            self.input_storage
+            sourcing_cost_per_item += self
+                .input_storage
                 .remove_ware(input * recipe_application_amount);
         }
         for output in self.recipe.outputs() {
-            self.output_storage.insert_ware(
-                *output * recipe_application_amount,
-                self.hourly_wages * duration,
-            );
+            self.output_storage
+                .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);
         }
     }
 }

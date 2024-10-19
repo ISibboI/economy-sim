@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{HashMap, VecDeque};
 
 use crate::{
-    money::Money,
+    money::ApproximateMoney,
     ware::{Ware, WareAmount},
 };
 
@@ -13,12 +13,12 @@ pub struct Warehouse {
 #[derive(Debug)]
 pub struct WarehouseEntry {
     total_amount: u64,
-    batches: Vec<WarehouseBatch>,
+    batches: VecDeque<WarehouseBatch>,
 }
 
 #[derive(Debug)]
 pub struct WarehouseBatch {
-    sourcing_cost_per_item: Money,
+    sourcing_cost_per_item: ApproximateMoney,
     amount: u64,
 }
 
@@ -37,7 +37,11 @@ impl Warehouse {
         }
     }
 
-    pub fn insert_ware(&mut self, ware_amount: WareAmount, sourcing_cost_per_item: Money) {
+    pub fn insert_ware(
+        &mut self,
+        ware_amount: WareAmount,
+        sourcing_cost_per_item: ApproximateMoney,
+    ) {
         if let Some(entry) = self.wares.get_mut(&ware_amount.ware()) {
             entry.insert(ware_amount.amount(), sourcing_cost_per_item);
         } else {
@@ -48,27 +52,26 @@ impl Warehouse {
         }
     }
 
-    pub fn remove_ware_groups<'this, 'group>(
-        &'this mut self,
-        group: &'group [WareAmount],
-        amount: u64,
-    ) -> impl Iterator<Item = WarehouseBatch> + use<'this, 'group> {
-        WareGroupRemoveIterator {
-            warehouse: self,
-            group,
-            amount,
+    pub fn remove_ware(&mut self, ware_amount: WareAmount) -> ApproximateMoney {
+        let entry = self.wares.get_mut(&ware_amount.ware()).unwrap();
+        let result = entry.remove(ware_amount.amount());
+        if entry.is_empty() {
+            self.wares.remove(&ware_amount.ware());
         }
+        result
     }
 }
 
 impl WarehouseEntry {
-    pub fn new(amount: u64, sourcing_cost_per_item: Money) -> Self {
+    pub fn new(amount: u64, sourcing_cost_per_item: ApproximateMoney) -> Self {
         Self {
             total_amount: amount,
-            batches: vec![WarehouseBatch {
+            batches: [WarehouseBatch {
                 sourcing_cost_per_item,
                 amount,
-            }],
+            }]
+            .into_iter()
+            .collect(),
         }
     }
 
@@ -80,19 +83,37 @@ impl WarehouseEntry {
         self.total_amount == 0
     }
 
-    pub fn insert(&mut self, amount: u64, sourcing_cost_per_item: Money) {
+    pub fn insert(&mut self, amount: u64, sourcing_cost_per_item: ApproximateMoney) {
         self.total_amount = self.total_amount.checked_add(amount).unwrap();
-        self.batches.push(WarehouseBatch {
+        self.batches.push_back(WarehouseBatch {
             sourcing_cost_per_item,
             amount,
         });
     }
-}
 
-impl<'warehouse, 'group> Iterator for WareGroupRemoveIterator<'warehouse, 'group> {
-    type Item = WarehouseBatch;
+    pub fn remove(&mut self, mut amount: u64) -> ApproximateMoney {
+        assert!(amount > 0);
+        self.total_amount = self.total_amount.checked_sub(amount).unwrap();
+        let mut total_sourcing_cost = ApproximateMoney::ZERO;
+        let total_removed_amount = amount;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        while amount > 0 {
+            let batch = self.batches.front_mut().unwrap();
+            let sourcing_cost_per_item = batch.sourcing_cost_per_item;
+
+            let batch_amount = if amount >= batch.amount {
+                amount -= batch.amount;
+                self.batches.pop_front().unwrap().amount
+            } else {
+                let batch_amount = amount;
+                batch.amount -= batch_amount;
+                amount = 0;
+                batch_amount
+            };
+
+            total_sourcing_cost += sourcing_cost_per_item * batch_amount;
+        }
+
+        total_sourcing_cost / total_removed_amount
     }
 }
