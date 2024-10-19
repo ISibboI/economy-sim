@@ -41,11 +41,25 @@ impl Mul<u64> for Money {
     }
 }
 
+impl Mul<Money> for u64 {
+    type Output = Money;
+
+    fn mul(self, rhs: Money) -> Self::Output {
+        rhs * self
+    }
+}
+
 impl Rem<u64> for Money {
     type Output = Money;
 
     fn rem(self, rhs: u64) -> Self::Output {
         Self(self.0 % rhs)
+    }
+}
+
+impl AddAssign for Money {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 = self.0.checked_add(rhs.0).unwrap();
     }
 }
 
@@ -69,21 +83,29 @@ impl From<f64> for ApproximateMoney {
     }
 }
 
+impl From<u64> for ApproximateMoney {
+    fn from(value: u64) -> Self {
+        Self(value as f64)
+    }
+}
+
 impl From<ApproximateMoney> for f64 {
     fn from(value: ApproximateMoney) -> Self {
         value.0
     }
 }
 
-impl From<ApproximateMoney> for Money {
-    fn from(value: ApproximateMoney) -> Self {
-        Self(value.0.round() as u64)
-    }
-}
-
 impl From<Money> for ApproximateMoney {
     fn from(value: Money) -> Self {
         Self(value.0 as f64)
+    }
+}
+
+impl Div for ApproximateMoney {
+    type Output = ApproximateMoney;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Self(self.0 / rhs.0)
     }
 }
 

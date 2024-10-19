@@ -99,10 +99,15 @@ impl Factory {
             market.buy(
                 WareAmount::new(input.ware(), missing_amount),
                 &mut self.input_storage,
+                &mut self.money,
             );
         }
 
         todo!()
+    }
+
+    pub fn collect_money(&mut self, market: &mut Market, factory_id: FactoryId) {
+        market.transfer_money(&mut self.money, factory_id);
     }
 }
 

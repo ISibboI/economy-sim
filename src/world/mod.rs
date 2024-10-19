@@ -1,7 +1,4 @@
-use general_stable_vec::{
-    implementation::option_vec::OptionStableVec,
-    interface::{StableVec, StableVecAccess},
-};
+use general_stable_vec::{implementation::option_vec::OptionStableVec, interface::StableVec};
 use rand::Rng;
 
 use crate::{
@@ -40,7 +37,7 @@ impl World {
             factory.offer_outputs(&mut self.market, factory_id);
         }
 
-        self.market.sort(rng);
+        self.market.sort_offers(rng);
 
         // 3. Inputs are bought from the market (in random order).
         for factory in self.factories.iter_elements_mut() {
@@ -48,6 +45,8 @@ impl World {
         }
 
         // 4. Money is returned from the market to the factories.
-        todo!()
+        for (factory_id, factory) in self.factories.iter_mut() {
+            factory.collect_money(&mut self.market, factory_id);
+        }
     }
 }
