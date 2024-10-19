@@ -38,29 +38,38 @@ impl Factory {
     pub fn produce(&mut self, duration: DateTime) {
         // Compute available recipe applications.
         let maximum_recipe_application_amount = self.recipe.rate() * duration;
-        let recipe_application_amount = self.recipe.inputs().iter().copied().fold(
-            maximum_recipe_application_amount,
-            |recipe_application_amount, single_input_amount| {
-                let required_input_amount = single_input_amount * recipe_application_amount;
-                let available_input_amount =
-                    self.input_storage.ware_amount(required_input_amount.ware());
+        let recipe_application_amount = self
+            .recipe
+            .inputs()
+            .iter()
+            .copied()
+            .fold(
+                maximum_recipe_application_amount,
+                |recipe_application_amount, single_input_amount| {
+                    let required_input_amount = single_input_amount * recipe_application_amount;
+                    let available_input_amount =
+                        self.input_storage.ware_amount(required_input_amount.ware());
 
-                if available_input_amount < required_input_amount {
-                    available_input_amount / single_input_amount
-                } else {
-                    recipe_application_amount
-                }
-            },
-        );
+                    if available_input_amount < required_input_amount {
+                        available_input_amount / single_input_amount
+                    } else {
+                        recipe_application_amount
+                    }
+                },
+            )
+            .min(self.money / self.hourly_wages);
+
         let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
         let wages = self.hourly_wages * duration;
+        self.money -= wages;
         let mut sourcing_cost_per_item = ApproximateMoney::from(wages) / recipe_application_amount;
 
         // Apply recipe.
         for input in self.recipe.inputs() {
             sourcing_cost_per_item += self
                 .input_storage
-                .remove_ware(input * recipe_application_amount);
+                .remove_ware(input * recipe_application_amount)
+                * input.amount();
         }
         for output in self.recipe.outputs() {
             self.output_storage

@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{AddAssign, Div, Mul, Rem},
+    ops::{AddAssign, Div, Mul, Rem, SubAssign},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -46,6 +46,20 @@ impl Rem<u64> for Money {
 
     fn rem(self, rhs: u64) -> Self::Output {
         Self(self.0 % rhs)
+    }
+}
+
+impl SubAssign for Money {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 = self.0.checked_sub(rhs.0).unwrap()
+    }
+}
+
+impl Div for Money {
+    type Output = u64;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self.0.checked_div(rhs.0).unwrap()
     }
 }
 
