@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use consumer::Consumer;
-use factory::Factory;
+use factory::{template::FactoryTemplate, Factory};
 use log::{info, LevelFilter};
 use money::Money;
 use rand::SeedableRng;
@@ -49,32 +49,38 @@ fn main() {
     let mut world = World::new(
         [
             Factory::new(
-                Recipe::new(
-                    [],
-                    [WareAmount::new(Ware::Water, 10)],
-                    ProductionRate::new(100),
+                FactoryTemplate::new(
+                    Recipe::new(
+                        [],
+                        [WareAmount::new(Ware::Water, 10)],
+                        ProductionRate::new(100),
+                    ),
+                    Money::from(100),
                 ),
-                Money::from(100),
                 Money::from(10_000),
             ),
             Factory::new(
-                Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
-                Money::from(100),
+                FactoryTemplate::new(
+                    Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
+                    Money::from(100),
+                ),
                 Money::from(10_000),
             ),
             Factory::new(
-                Recipe::new(
-                    [
-                        WareAmount::new(Ware::Water, 100),
-                        WareAmount::new(Ware::Seed, 1),
-                    ],
-                    [
-                        WareAmount::new(Ware::Apple, 10),
-                        WareAmount::new(Ware::Seed, 2),
-                    ],
-                    ProductionRate::new(10),
+                FactoryTemplate::new(
+                    Recipe::new(
+                        [
+                            WareAmount::new(Ware::Water, 100),
+                            WareAmount::new(Ware::Seed, 1),
+                        ],
+                        [
+                            WareAmount::new(Ware::Apple, 10),
+                            WareAmount::new(Ware::Seed, 2),
+                        ],
+                        ProductionRate::new(10),
+                    ),
+                    Money::from(100),
                 ),
-                Money::from(100),
                 Money::from(10_000),
             ),
         ],

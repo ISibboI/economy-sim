@@ -2,36 +2,35 @@ use std::fmt::Display;
 
 use general_stable_vec::interface::StableVecIndex;
 use log::debug;
+use template::FactoryTemplate;
 
 use crate::{
     market::Market,
     money::{ApproximateMoney, Money},
-    recipe::Recipe,
     time::DateTime,
     ware::WareAmount,
     warehouse::Warehouse,
 };
+
+pub mod template;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FactoryId(usize);
 
 #[derive(Debug)]
 pub struct Factory {
-    recipe: Recipe,
+    template: FactoryTemplate,
     input_storage: Warehouse,
     output_storage: Warehouse,
-    hourly_wages: Money,
     money: Money,
 }
 
 impl Factory {
-    pub fn new(recipe: Recipe, hourly_wages: Money, starting_money: Money) -> Self {
-        assert!(hourly_wages % recipe.rate().per_hour() == Money::ZERO);
+    pub fn new(template: FactoryTemplate, starting_money: Money) -> Self {
         Self {
-            recipe,
+            template,
             input_storage: Default::default(),
             output_storage: Default::default(),
-            hourly_wages,
             money: starting_money,
         }
     }
@@ -47,13 +46,16 @@ impl Factory {
     pub fn produce(&mut self, duration: DateTime) {
         debug!(
             "Factory with recipe {} produces for {duration} with {} and inputs {}",
-            self.recipe, self.money, self.input_storage
+            self.template.recipe(),
+            self.money,
+            self.input_storage
         );
 
         // Compute available recipe applications.
-        let maximum_recipe_application_amount = self.recipe.rate() * duration;
+        let maximum_recipe_application_amount = self.template.recipe().rate() * duration;
         let recipe_application_amount = self
-            .recipe
+            .template
+            .recipe()
             .inputs()
             .iter()
             .copied()
@@ -71,26 +73,27 @@ impl Factory {
                     }
                 },
             )
-            .min(self.money / self.hourly_wages);
+            .min(self.money / self.template.hourly_wages());
         debug!("Executing the recipe {recipe_application_amount} times");
 
         if recipe_application_amount > 0 {
-            let duration = recipe_application_amount.div_ceil(self.recipe.rate().per_hour());
-            let wages = self.hourly_wages * duration;
+            let duration =
+                recipe_application_amount.div_ceil(self.template.recipe().rate().per_hour());
+            let wages = self.template.hourly_wages() * duration;
             self.money -= wages;
             let mut sourcing_cost_per_item =
                 ApproximateMoney::from(wages) / recipe_application_amount;
 
             // Apply recipe.
-            for input in self.recipe.inputs() {
+            for input in self.template.recipe().inputs() {
                 sourcing_cost_per_item += self
                     .input_storage
                     .remove_ware(input * recipe_application_amount)
                     * input.amount();
             }
 
-            sourcing_cost_per_item /= self.recipe.output_amount();
-            for output in self.recipe.outputs() {
+            sourcing_cost_per_item /= self.template.recipe().output_amount();
+            for output in self.template.recipe().outputs() {
                 self.output_storage
                     .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);
             }
@@ -98,9 +101,9 @@ impl Factory {
     }
 
     pub fn reuse_inputs(&mut self) {
-        let recipe_production_per_hour = self.recipe.rate().per_hour();
+        let recipe_production_per_hour = self.template.recipe().rate().per_hour();
 
-        for input in self.recipe.inputs() {
+        for input in self.template.recipe().inputs() {
             let required_amount = input.amount() * recipe_production_per_hour;
             let available_amount = self.input_storage.ware_amount(input.ware()).amount();
             let missing_amount = required_amount.saturating_sub(available_amount);
@@ -128,16 +131,16 @@ impl Factory {
     }
 
     pub fn buy_inputs(&mut self, market: &mut Market) {
-        if self.recipe.inputs().is_empty() {
+        if self.template.recipe().inputs().is_empty() {
             return;
         }
 
         debug!(
             "Buying factory inputs from market for recipe {}",
-            self.recipe
+            self.template.recipe()
         );
 
-        let recipe_production_per_hour = self.recipe.rate().per_hour();
+        let recipe_production_per_hour = self.template.recipe().rate().per_hour();
 
         let mut left = 0;
         let mut right = recipe_production_per_hour;
@@ -153,7 +156,7 @@ impl Factory {
 
             let mut total_price = Money::ZERO;
 
-            for input in self.recipe.inputs() {
+            for input in self.template.recipe().inputs() {
                 let required_amount = input.amount() * middle;
                 let available_amount = self.input_storage.ware_amount(input.ware()).amount();
                 let missing_amount = required_amount.saturating_sub(available_amount);
@@ -161,7 +164,7 @@ impl Factory {
                 total_price += price;
             }
 
-            if total_price <= self.money.saturating_sub(self.hourly_wages) {
+            if total_price <= self.money.saturating_sub(self.template.hourly_wages()) {
                 left = middle;
             } else {
                 right = middle - 1;
@@ -171,7 +174,7 @@ impl Factory {
         debug_assert_eq!(left, right);
         let buy_target = left;
 
-        for input in self.recipe.inputs() {
+        for input in self.template.recipe().inputs() {
             let required_amount = input.amount() * buy_target;
             let available_amount = self.input_storage.ware_amount(input.ware()).amount();
             let missing_amount = required_amount.saturating_sub(available_amount);
