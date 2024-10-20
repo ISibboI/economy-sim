@@ -65,8 +65,8 @@ fn main() {
             ),
         ],
         [Consumer::new(
-            WareAmount::new(Ware::Apple, 10),
-            Money::from(2),
+            WareAmount::new(Ware::Apple, 100),
+            Money::from(11),
         )],
         vec![Box::new(FactoryMoneyStatistics::new("factory_money.svg"))],
     );

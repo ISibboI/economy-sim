@@ -38,6 +38,10 @@ impl Recipe {
     pub fn outputs(&self) -> &[WareAmount] {
         &self.outputs
     }
+
+    pub fn output_amount(&self) -> u64 {
+        self.outputs.iter().map(|output| output.amount()).sum()
+    }
 }
 
 impl ProductionRate {

@@ -88,6 +88,8 @@ impl Factory {
                     .remove_ware(input * recipe_application_amount)
                     * input.amount();
             }
+
+            sourcing_cost_per_item /= self.recipe.output_amount();
             for output in self.recipe.outputs() {
                 self.output_storage
                     .insert_ware(*output * recipe_application_amount, sourcing_cost_per_item);

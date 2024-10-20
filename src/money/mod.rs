@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, Rem, Sub, SubAssign},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -180,5 +180,32 @@ impl Add<f64> for ApproximateMoney {
 impl AddAssign for ApproximateMoney {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0
+    }
+}
+
+impl DivAssign<u64> for ApproximateMoney {
+    fn div_assign(&mut self, rhs: u64) {
+        self.0 /= rhs as f64
+    }
+}
+
+impl Display for ApproximateMoney {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        assert!(self.0.is_sign_positive(), "{}", self.0);
+        assert!(self.0.is_normal() || self.0 == 0.0, "{}", self.0);
+
+        if self.0 < 1e0 {
+            write!(f, "{:.3}€", self.0)
+        } else if self.0 < 1e1 {
+            write!(f, "{:.2}€", self.0)
+        } else if self.0 < 1e2 {
+            write!(f, "{:.1}€", self.0)
+        } else if self.0 < 1e3 {
+            write!(f, "{:.0}€", self.0)
+        } else if self.0 < 1e4 {
+            write!(f, "{:.2}k€", self.0)
+        } else {
+            write!(f, "{:.1}k€", self.0)
+        }
     }
 }
