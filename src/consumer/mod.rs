@@ -62,7 +62,6 @@ impl Consumer {
         }
 
         let unfulfilled_demand = (demand - extra_demand) / raw_demand;
-        println!("unfulfilled_demand: {unfulfilled_demand:.2}");
         self.fulfilment -= (1.0 - self.decay) * unfulfilled_demand;
         self.fulfilment -= (self.fulfilment - 1.0) * (1.0 - self.decay);
 
