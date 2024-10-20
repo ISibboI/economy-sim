@@ -105,4 +105,6 @@ fn main() {
 
     info!("Finalising statistics");
     world.finalise_statistics();
+
+    info!("Done");
 }
