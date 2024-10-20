@@ -1,5 +1,12 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use plotters::{
+    chart::ChartBuilder,
+    prelude::{IntoDrawingArea, PathElement, SVGBackend},
+    series::LineSeries,
+    style::{IntoFont, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, TRANSPARENT, YELLOW},
+};
+
 use crate::{factory::FactoryId, money::Money, time::DateTime, world::World};
 
 use super::Statistics;
@@ -36,7 +43,7 @@ impl Statistics for FactoryMoneyStatistics {
             .money_time_series
             .values()
             .flat_map(|money_time_series| money_time_series.iter())
-            .copied();
+            .map(|(time, money)| (time.into_hours() as f64, f64::from(*money)));
         let (first_time, first_money) = iter.next().unwrap();
         let (min_time, max_time, min_money, max_money) = iter.fold(
             (first_time, first_time, first_money, first_money),
@@ -49,7 +56,36 @@ impl Statistics for FactoryMoneyStatistics {
                 )
             },
         );
+        let time_margin = (max_time - min_time) / 20.0;
+        let money_margin = (max_money - min_money) / 20.0;
 
-        todo!()
+        let root = SVGBackend::new(&self.output_file, (640, 480)).into_drawing_area();
+        root.fill(&TRANSPARENT).unwrap();
+
+        let styles = [RED, GREEN, BLUE, BLACK, CYAN, MAGENTA, YELLOW];
+        let mut chart = ChartBuilder::on(&root)
+            .caption("Factory Money Over Time", ("sans-serif", 24).into_font())
+            .margin(5)
+            .x_label_area_size(30)
+            .y_label_area_size(30)
+            .build_cartesian_2d(
+                min_time - time_margin..max_time + time_margin,
+                min_money - money_margin..max_time + money_margin,
+            )
+            .unwrap();
+        chart.configure_mesh().draw().unwrap();
+
+        for ((factory_id, series), style) in self.money_time_series.iter().zip(&styles) {
+            chart
+                .draw_series(LineSeries::new(
+                    series
+                        .iter()
+                        .map(|(time, money)| (time.into_hours() as f64, f64::from(*money))),
+                    style,
+                ))
+                .unwrap()
+                .label(format!("Factory {factory_id}"))
+                .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], *style));
+        }
     }
 }

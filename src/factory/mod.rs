@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use general_stable_vec::interface::StableVecIndex;
 use log::debug;
 
@@ -174,5 +176,11 @@ impl From<usize> for FactoryId {
 impl From<FactoryId> for usize {
     fn from(value: FactoryId) -> Self {
         value.0
+    }
+}
+
+impl Display for FactoryId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }

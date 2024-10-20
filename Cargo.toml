@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+plotters = { version = "0.3.7", default_features = false, features = [
+    "svg_backend",
+    "all_elements",
+    "all_series",
+] }
 log = "0.4.22"
 simplelog = "0.12.2"
 general_stable_vec = "0.12.1"

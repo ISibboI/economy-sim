@@ -33,6 +33,18 @@ impl From<u64> for Money {
     }
 }
 
+impl From<Money> for u64 {
+    fn from(value: Money) -> Self {
+        value.0
+    }
+}
+
+impl From<Money> for f64 {
+    fn from(value: Money) -> Self {
+        value.0 as f64
+    }
+}
+
 impl Mul<u64> for Money {
     type Output = Money;
 
