@@ -16,6 +16,16 @@ pub struct WareAmount {
     amount: u64,
 }
 
+impl Ware {
+    /// Returns true if this ware is countable in the English grammatical sense.
+    fn is_countable(&self) -> bool {
+        match self {
+            Self::Water => false,
+            Self::Seed | Self::Apple => true,
+        }
+    }
+}
+
 impl WareAmount {
     pub fn new(ware: Ware, amount: u64) -> Self {
         Self { ware, amount }
@@ -81,7 +91,11 @@ impl Display for WareAmount {
             "{} {}{}",
             self.amount,
             self.ware,
-            if self.amount != 1 { "s" } else { "" },
+            if self.amount != 1 && self.ware.is_countable() {
+                "s"
+            } else {
+                ""
+            },
         )
     }
 }

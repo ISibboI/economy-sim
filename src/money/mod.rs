@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Div, Mul, Rem, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,6 +66,14 @@ impl AddAssign for Money {
 impl SubAssign for Money {
     fn sub_assign(&mut self, rhs: Self) {
         self.0 = self.0.checked_sub(rhs.0).unwrap()
+    }
+}
+
+impl Sub for Money {
+    type Output = Money;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0.checked_sub(rhs.0).unwrap())
     }
 }
 

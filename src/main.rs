@@ -19,7 +19,7 @@ mod world;
 
 fn main() {
     TermLogger::init(
-        log::LevelFilter::Debug,
+        log::LevelFilter::Info,
         Default::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,

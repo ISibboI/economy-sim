@@ -101,11 +101,51 @@ impl Factory {
     }
 
     pub fn buy_inputs(&mut self, market: &mut Market) {
+        debug!(
+            "Buying factory inputs from market for recipe {}",
+            self.recipe
+        );
+
         let recipe_production_per_hour = self.recipe.rate().per_hour();
+
+        let mut left = 0;
+        let mut right = recipe_production_per_hour;
+        let mut ceil_middle = false;
+
+        while left < right {
+            let middle = if ceil_middle {
+                (left + right).div_ceil(2)
+            } else {
+                (left + right) / 2
+            };
+            ceil_middle = !ceil_middle;
+
+            let mut total_price = Money::ZERO;
+
+            for input in self.recipe.inputs() {
+                let required_amount = input.amount() * middle;
+                let available_amount = self.input_storage.ware_amount(input.ware()).amount();
+                let missing_amount = required_amount.saturating_sub(available_amount);
+                let (_, price) =
+                    market.calculate_price(WareAmount::new(input.ware(), missing_amount));
+                total_price += price;
+            }
+
+            if total_price <= self.money - self.hourly_wages {
+                left = middle;
+            } else {
+                right = middle - 1;
+            }
+        }
+
+        debug_assert_eq!(left, right);
+        let buy_target = left;
+
         for input in self.recipe.inputs() {
-            let required_amount = input.amount() * recipe_production_per_hour;
+            let required_amount = input.amount() * buy_target;
             let available_amount = self.input_storage.ware_amount(input.ware()).amount();
             let missing_amount = required_amount.saturating_sub(available_amount);
+
             market.buy(
                 WareAmount::new(input.ware(), missing_amount),
                 &mut self.input_storage,

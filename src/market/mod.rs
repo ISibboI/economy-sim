@@ -117,6 +117,30 @@ impl Market {
         bought_amount
     }
 
+    pub fn calculate_price(&mut self, ware_amount: WareAmount) -> (u64, Money) {
+        let mut total_sourcing_cost = Money::ZERO;
+        let bought_amount = if let Some(offers) = self.offers.get_mut(&ware_amount.ware()) {
+            let mut remaining_amount = ware_amount.amount();
+            for offer in offers.iter().rev() {
+                let offer_buy_amount = offer.amount.min(remaining_amount);
+
+                let offer_sourcing_cost = offer.price_per_item * offer_buy_amount;
+                total_sourcing_cost += offer_sourcing_cost;
+                remaining_amount -= offer_buy_amount;
+
+                if remaining_amount == 0 {
+                    break;
+                }
+            }
+
+            ware_amount.amount() - remaining_amount
+        } else {
+            0
+        };
+
+        (bought_amount, total_sourcing_cost)
+    }
+
     pub fn transfer_money(&mut self, money: &mut Money, factory_id: FactoryId) {
         for money_transaction in self
             .money_transactions
