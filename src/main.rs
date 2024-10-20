@@ -5,6 +5,7 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use recipe::{ProductionRate, Recipe};
 use simplelog::TermLogger;
+use statistics::factory_money_statistics::FactoryMoneyStatistics;
 use ware::{Ware, WareAmount};
 use world::World;
 
@@ -12,6 +13,7 @@ mod factory;
 mod market;
 mod money;
 mod recipe;
+mod statistics;
 mod time;
 mod ware;
 mod warehouse;
@@ -27,43 +29,49 @@ fn main() {
     .unwrap();
 
     info!("Creating world");
-    let mut world = World::new([
-        Factory::new(
-            Recipe::new(
-                [],
-                [WareAmount::new(Ware::Water, 10)],
-                ProductionRate::new(100),
+    let mut world = World::new(
+        [
+            Factory::new(
+                Recipe::new(
+                    [],
+                    [WareAmount::new(Ware::Water, 10)],
+                    ProductionRate::new(100),
+                ),
+                Money::from(100),
+                Money::from(1_000),
             ),
-            Money::from(100),
-            Money::from(1_000),
-        ),
-        Factory::new(
-            Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
-            Money::from(100),
-            Money::from(1_000),
-        ),
-        Factory::new(
-            Recipe::new(
-                [
-                    WareAmount::new(Ware::Water, 100),
-                    WareAmount::new(Ware::Seed, 1),
-                ],
-                [
-                    WareAmount::new(Ware::Apple, 10),
-                    WareAmount::new(Ware::Seed, 2),
-                ],
-                ProductionRate::new(10),
+            Factory::new(
+                Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
+                Money::from(100),
+                Money::from(1_000),
             ),
-            Money::from(100),
-            Money::from(1_000),
-        ),
-    ]);
+            Factory::new(
+                Recipe::new(
+                    [
+                        WareAmount::new(Ware::Water, 100),
+                        WareAmount::new(Ware::Seed, 1),
+                    ],
+                    [
+                        WareAmount::new(Ware::Apple, 10),
+                        WareAmount::new(Ware::Seed, 2),
+                    ],
+                    ProductionRate::new(10),
+                ),
+                Money::from(100),
+                Money::from(1_000),
+            ),
+        ],
+        vec![Box::new(FactoryMoneyStatistics::new("factory_money.svg"))],
+    );
 
     info!("Creating rng");
     let mut rng = Xoshiro256PlusPlus::from_entropy();
 
     info!("Advancing hour");
     world.advance_hour(&mut rng);
+
+    info!("Finalising statistics");
+    world.finalise_statistics();
 
     info!("World:\n{world:?}");
 }

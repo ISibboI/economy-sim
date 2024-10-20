@@ -1,3 +1,5 @@
+use std::mem;
+
 use general_stable_vec::{implementation::option_vec::OptionStableVec, interface::StableVec};
 use log::debug;
 use rand::Rng;
@@ -5,6 +7,7 @@ use rand::Rng;
 use crate::{
     factory::{Factory, FactoryId},
     market::Market,
+    statistics::Statistics,
     time::DateTime,
 };
 
@@ -13,15 +16,28 @@ pub struct World {
     factories: OptionStableVec<Factory, FactoryId>,
     market: Market,
     time: DateTime,
+    statistics: Vec<Box<dyn Statistics>>,
 }
 
 impl World {
-    pub fn new(factories: impl IntoIterator<Item = Factory>) -> Self {
+    pub fn new(
+        factories: impl IntoIterator<Item = Factory>,
+        statistics: Vec<Box<dyn Statistics>>,
+    ) -> Self {
         Self {
             factories: factories.into_iter().collect(),
             market: Default::default(),
             time: DateTime::ZERO,
+            statistics,
         }
+    }
+
+    pub fn factories(&self) -> impl Iterator<Item = (FactoryId, &Factory)> {
+        self.factories.iter()
+    }
+
+    pub fn time(&self) -> DateTime {
+        self.time
     }
 
     pub fn advance_hour(&mut self, rng: &mut impl Rng) {
@@ -50,6 +66,19 @@ impl World {
         // 4. Money is returned from the market to the factories.
         for (factory_id, factory) in self.factories.iter_mut() {
             factory.collect_money(&mut self.market, factory_id);
+        }
+
+        // 5. Update statistics.
+        let mut statistics = mem::take(&mut self.statistics);
+        for statistics in &mut statistics {
+            statistics.collect(self);
+        }
+        self.statistics = statistics;
+    }
+
+    pub fn finalise_statistics(&self) {
+        for statistics in &self.statistics {
+            statistics.finalise();
         }
     }
 }

@@ -34,6 +34,10 @@ impl Factory {
         }
     }
 
+    pub fn money(&self) -> Money {
+        self.money
+    }
+
     pub fn produce_one_hour(&mut self) {
         self.produce(DateTime::from_hours(1));
     }
