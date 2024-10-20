@@ -75,7 +75,7 @@ impl World {
         for factory in self.factories.iter_elements_mut() {
             factory.buy_inputs(&mut self.market);
         }
-        for consumer in &self.consumers {
+        for consumer in &mut self.consumers {
             consumer.consume(&mut self.market);
         }
 
