@@ -95,6 +95,25 @@ impl Factory {
         }
     }
 
+    pub fn reuse_inputs(&mut self) {
+        let recipe_production_per_hour = self.recipe.rate().per_hour();
+
+        for input in self.recipe.inputs() {
+            let required_amount = input.amount() * recipe_production_per_hour;
+            let available_amount = self.input_storage.ware_amount(input.ware()).amount();
+            let missing_amount = required_amount.saturating_sub(available_amount);
+            let reusable_amount = self.output_storage.ware_amount(input.ware()).amount();
+            let transfer_amount =
+                WareAmount::new(input.ware(), missing_amount.min(reusable_amount));
+
+            if transfer_amount.amount() > 0 {
+                let sourcing_cost_per_item = self.output_storage.remove_ware(transfer_amount);
+                self.input_storage
+                    .insert_ware(transfer_amount, sourcing_cost_per_item);
+            }
+        }
+    }
+
     pub fn offer_outputs(&mut self, market: &mut Market, factory_id: FactoryId) {
         for batch in self.output_storage.drain() {
             market.offer(

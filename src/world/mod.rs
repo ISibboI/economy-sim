@@ -57,8 +57,9 @@ impl World {
             factory.produce_one_hour();
         }
 
-        // 2. Outputs get offered on the market.
+        // 2. Outputs get offered on the market, or reused as inputs.
         for (factory_id, factory) in self.factories.iter_mut() {
+            factory.reuse_inputs();
             factory.offer_outputs(&mut self.market, factory_id);
         }
 

@@ -55,6 +55,9 @@ impl Warehouse {
         }
     }
 
+    /// Remove the given amount of the given ware.
+    ///
+    /// Returns the average sourcing cost per item of the wares that were removed.
     pub fn remove_ware(&mut self, ware_amount: WareAmount) -> ApproximateMoney {
         let entry = self.wares.get_mut(&ware_amount.ware()).unwrap();
         let result = entry.remove(ware_amount.amount());
