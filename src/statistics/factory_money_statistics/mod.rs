@@ -7,7 +7,6 @@ use plotters::{
     series::LineSeries,
     style::{IntoFont, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, TRANSPARENT, WHITE, YELLOW},
 };
-use thousands::Separable;
 
 use crate::{factory::FactoryId, money::Money, time::DateTime, world::World};
 
@@ -75,8 +74,8 @@ impl Statistics for FactoryMoneyStatistics {
         let mut chart = ChartBuilder::on(&root)
             .caption("Factory Money Over Time", ("sans-serif", 24).into_font())
             .margin(5)
-            .x_label_area_size(40)
-            .y_label_area_size(30)
+            .x_label_area_size(30)
+            .y_label_area_size(50)
             .build_cartesian_2d(
                 chart_min_time.into_hours()..chart_max_time.into_hours(),
                 chart_min_money.raw()..chart_max_money.raw(),
@@ -112,5 +111,32 @@ impl Statistics for FactoryMoneyStatistics {
 }
 
 fn format_money(money: &u64) -> String {
-    money.separate_with_commas()
+    let money = *money as f64;
+    if money < 1e3 {
+        format!("{money}€")
+    } else if money < 1e4 {
+        format!("{:.2}k€", money / 1e3)
+    } else if money < 1e5 {
+        format!("{:.1}k€", money / 1e3)
+    } else if money < 1e6 {
+        format!("{:.0}k€", money / 1e3)
+    } else if money < 1e7 {
+        format!("{:.2}M€", money / 1e6)
+    } else if money < 1e8 {
+        format!("{:.1}M€", money / 1e6)
+    } else if money < 1e9 {
+        format!("{:.0}M€", money / 1e6)
+    } else if money < 1e10 {
+        format!("{:.2}G€", money / 1e9)
+    } else if money < 1e11 {
+        format!("{:.1}G€", money / 1e9)
+    } else if money < 1e12 {
+        format!("{:.0}G€", money / 1e9)
+    } else if money < 1e13 {
+        format!("{:.2}T€", money / 1e12)
+    } else if money < 1e14 {
+        format!("{:.1}T€", money / 1e12)
+    } else {
+        format!("{:.0}T€", money / 1e12)
+    }
 }
