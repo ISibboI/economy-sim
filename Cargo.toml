@@ -9,6 +9,7 @@ plotters = { version = "0.3.7", default-features = false, features = [
     "all_elements",
     "all_series",
 ] }
+clap = { version = "4.5.20", features = ["derive"] }
 log = "0.4.22"
 simplelog = "0.12.2"
 general_stable_vec = "0.12.1"

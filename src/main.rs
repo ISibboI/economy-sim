@@ -1,6 +1,9 @@
+use std::time::Instant;
+
+use clap::Parser;
 use consumer::Consumer;
 use factory::Factory;
-use log::info;
+use log::{info, LevelFilter};
 use money::Money;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -22,9 +25,20 @@ mod ware;
 mod warehouse;
 mod world;
 
+#[derive(Parser)]
+struct Cli {
+    #[arg(long, short = 'l', default_value = "Info")]
+    log_level: LevelFilter,
+
+    #[arg(long, short = 'r', default_value = "10")]
+    rounds: u64,
+}
+
 fn main() {
+    let cli = Cli::parse();
+
     TermLogger::init(
-        log::LevelFilter::Info,
+        cli.log_level,
         Default::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
@@ -75,8 +89,19 @@ fn main() {
     info!("Creating rng");
     let mut rng = Xoshiro256PlusPlus::from_entropy();
 
-    info!("Advancing hour");
-    world.advance_time(DateTime::from_hours(10), &mut rng);
+    info!("Computing {} rounds", cli.rounds);
+    let start_time = Instant::now();
+    world.advance_time(DateTime::from_hours(cli.rounds), &mut rng);
+    let end_time = Instant::now();
+
+    let duration = end_time - start_time;
+    let duration_per_round = duration.as_secs_f64() / cli.rounds as f64;
+    info!(
+        "Took {}s to compute {} rounds ({}s/round)",
+        duration.as_secs_f32(),
+        cli.rounds,
+        duration_per_round as f32
+    );
 
     info!("Finalising statistics");
     world.finalise_statistics();
