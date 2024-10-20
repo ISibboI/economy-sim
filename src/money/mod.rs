@@ -1,5 +1,6 @@
 use std::{
     fmt::Display,
+    iter::Sum,
     ops::{Add, AddAssign, Div, DivAssign, Mul, Rem, Sub, SubAssign},
 };
 
@@ -121,6 +122,12 @@ impl Div for Money {
     }
 }
 
+impl Sum for Money {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Money::ZERO, |sum, money| sum.checked_add(money).unwrap())
+    }
+}
+
 impl From<f64> for ApproximateMoney {
     fn from(value: f64) -> Self {
         Self(value)
@@ -146,10 +153,10 @@ impl From<Money> for ApproximateMoney {
 }
 
 impl Div for ApproximateMoney {
-    type Output = ApproximateMoney;
+    type Output = f64;
 
     fn div(self, rhs: Self) -> Self::Output {
-        Self(self.0 / rhs.0)
+        self.0 / rhs.0
     }
 }
 
