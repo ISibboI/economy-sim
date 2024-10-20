@@ -12,8 +12,16 @@ pub struct ApproximateMoney(f64);
 impl Money {
     pub const ZERO: Money = Money(0);
 
+    pub fn raw(&self) -> u64 {
+        self.0
+    }
+
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
         self.0.checked_add(rhs.0).map(Self)
+    }
+
+    pub fn saturating_sub(self, rhs: Self) -> Self {
+        Self(self.0.saturating_sub(rhs.0))
     }
 }
 
@@ -61,6 +69,14 @@ impl Mul<Money> for u64 {
     }
 }
 
+impl Div<u64> for Money {
+    type Output = Self;
+
+    fn div(self, rhs: u64) -> Self::Output {
+        Self(self.0.checked_div(rhs).unwrap())
+    }
+}
+
 impl Rem<u64> for Money {
     type Output = Money;
 
@@ -78,6 +94,14 @@ impl AddAssign for Money {
 impl SubAssign for Money {
     fn sub_assign(&mut self, rhs: Self) {
         self.0 = self.0.checked_sub(rhs.0).unwrap()
+    }
+}
+
+impl Add for Money {
+    type Output = Money;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0.checked_add(rhs.0).unwrap())
     }
 }
 

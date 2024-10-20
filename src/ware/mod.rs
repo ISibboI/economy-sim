@@ -38,6 +38,11 @@ impl WareAmount {
     pub fn amount(&self) -> u64 {
         self.amount
     }
+
+    pub fn with_amount(mut self, amount: u64) -> Self {
+        self.amount = amount;
+        self
+    }
 }
 
 impl Mul<u64> for WareAmount {

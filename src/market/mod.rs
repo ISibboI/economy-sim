@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use rand::{seq::SliceRandom, Rng};
 
@@ -67,6 +67,7 @@ impl Market {
         output_warehouse: &mut Warehouse,
         money: &mut Money,
     ) -> u64 {
+        assert!(self.market_offers_sorted);
         let mut total_sourcing_cost = Money::ZERO;
         let bought_amount = if let Some(offers) = self.offers.get_mut(&ware_amount.ware()) {
             let mut remaining_amount = ware_amount.amount();
@@ -118,6 +119,7 @@ impl Market {
     }
 
     pub fn calculate_price(&mut self, ware_amount: WareAmount) -> (u64, Money) {
+        assert!(self.market_offers_sorted);
         let mut total_sourcing_cost = Money::ZERO;
         let bought_amount = if let Some(offers) = self.offers.get_mut(&ware_amount.ware()) {
             let mut remaining_amount = ware_amount.amount();
@@ -149,5 +151,21 @@ impl Market {
         {
             *money += money_transaction;
         }
+    }
+}
+
+impl Display for Market {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Market {{")?;
+        let mut once = false;
+        for (ware, offers) in &self.offers {
+            if once {
+                write!(f, ", ")?;
+            } else {
+                once = true;
+            }
+            write!(f, "{ware}: {}", offers.last().unwrap().price_per_item)?;
+        }
+        write!(f, "}}")
     }
 }

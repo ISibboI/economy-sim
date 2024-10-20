@@ -43,9 +43,15 @@ impl World {
     pub fn advance_hour(&mut self, rng: &mut impl Rng) {
         debug!("Advancing world by one hour");
 
-        // Advance time
+        // Collect initial statistics on first update.
+        if self.time == DateTime::ZERO {
+            self.collect_statistics();
+        }
+
+        // Advance time.
         self.time.increment();
 
+        // Update
         // 1. Factories produce if possible.
         for factory in self.factories.iter_elements_mut() {
             factory.produce_one_hour();
@@ -57,6 +63,7 @@ impl World {
         }
 
         self.market.sort_offers(rng);
+        debug!("{}", self.market);
 
         // 3. Inputs are bought from the market (in random order).
         for factory in self.factories.iter_elements_mut() {
@@ -68,12 +75,23 @@ impl World {
             factory.collect_money(&mut self.market, factory_id);
         }
 
-        // 5. Update statistics.
+        // 5. Collect statistics.
+        self.collect_statistics();
+    }
+
+    fn collect_statistics(&mut self) {
+        debug!("Collecting statistics");
         let mut statistics = mem::take(&mut self.statistics);
         for statistics in &mut statistics {
             statistics.collect(self);
         }
         self.statistics = statistics;
+    }
+
+    pub fn advance_time(&mut self, time: DateTime, rng: &mut impl Rng) {
+        for _ in 0..time.into_hours() {
+            self.advance_hour(rng);
+        }
     }
 
     pub fn finalise_statistics(&self) {

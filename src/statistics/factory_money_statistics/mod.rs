@@ -1,11 +1,13 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use log::debug;
 use plotters::{
-    chart::ChartBuilder,
+    chart::{ChartBuilder, SeriesLabelPosition},
     prelude::{IntoDrawingArea, PathElement, SVGBackend},
     series::LineSeries,
-    style::{IntoFont, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, TRANSPARENT, YELLOW},
+    style::{IntoFont, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, TRANSPARENT, WHITE, YELLOW},
 };
+use thousands::Separable;
 
 use crate::{factory::FactoryId, money::Money, time::DateTime, world::World};
 
@@ -43,7 +45,8 @@ impl Statistics for FactoryMoneyStatistics {
             .money_time_series
             .values()
             .flat_map(|money_time_series| money_time_series.iter())
-            .map(|(time, money)| (time.into_hours() as f64, f64::from(*money)));
+            .copied();
+        //.map(|(time, money)| (time.into_hours() as f64, f64::from(*money)));
         let (first_time, first_money) = iter.next().unwrap();
         let (min_time, max_time, min_money, max_money) = iter.fold(
             (first_time, first_time, first_money, first_money),
@@ -56,8 +59,14 @@ impl Statistics for FactoryMoneyStatistics {
                 )
             },
         );
-        let time_margin = (max_time - min_time) / 20.0;
-        let money_margin = (max_money - min_money) / 20.0;
+        let time_margin = (max_time - min_time) / 20;
+        let money_margin = (max_money - min_money) / 20;
+        let chart_min_time = min_time.saturating_sub(time_margin);
+        let chart_max_time = max_time + time_margin;
+        let chart_min_money = min_money.saturating_sub(money_margin);
+        let chart_max_money = max_money + money_margin;
+
+        debug!("Drawing factory money statistics in area x: {chart_min_time}..{chart_max_time}; y: {chart_min_money}..{chart_max_money}");
 
         let root = SVGBackend::new(&self.output_file, (640, 480)).into_drawing_area();
         root.fill(&TRANSPARENT).unwrap();
@@ -66,26 +75,42 @@ impl Statistics for FactoryMoneyStatistics {
         let mut chart = ChartBuilder::on(&root)
             .caption("Factory Money Over Time", ("sans-serif", 24).into_font())
             .margin(5)
-            .x_label_area_size(30)
+            .x_label_area_size(40)
             .y_label_area_size(30)
             .build_cartesian_2d(
-                min_time - time_margin..max_time + time_margin,
-                min_money - money_margin..max_time + money_margin,
+                chart_min_time.into_hours()..chart_max_time.into_hours(),
+                chart_min_money.raw()..chart_max_money.raw(),
             )
             .unwrap();
-        chart.configure_mesh().draw().unwrap();
+        chart
+            .configure_mesh()
+            .y_label_formatter(&format_money)
+            .draw()
+            .unwrap();
 
         for ((factory_id, series), style) in self.money_time_series.iter().zip(&styles) {
             chart
                 .draw_series(LineSeries::new(
                     series
                         .iter()
-                        .map(|(time, money)| (time.into_hours() as f64, f64::from(*money))),
+                        .map(|(time, money)| (time.into_hours(), money.raw())),
                     style,
                 ))
                 .unwrap()
                 .label(format!("Factory {factory_id}"))
                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], *style));
         }
+
+        chart
+            .configure_series_labels()
+            .background_style(WHITE)
+            .border_style(BLACK)
+            .position(SeriesLabelPosition::LowerRight)
+            .draw()
+            .unwrap();
     }
+}
+
+fn format_money(money: &u64) -> String {
+    money.separate_with_commas()
 }

@@ -107,6 +107,10 @@ impl Factory {
     }
 
     pub fn buy_inputs(&mut self, market: &mut Market) {
+        if self.recipe.inputs().is_empty() {
+            return;
+        }
+
         debug!(
             "Buying factory inputs from market for recipe {}",
             self.recipe
@@ -137,7 +141,7 @@ impl Factory {
                 total_price += price;
             }
 
-            if total_price <= self.money - self.hourly_wages {
+            if total_price <= self.money.saturating_sub(self.hourly_wages) {
                 left = middle;
             } else {
                 right = middle - 1;
@@ -152,11 +156,10 @@ impl Factory {
             let available_amount = self.input_storage.ware_amount(input.ware()).amount();
             let missing_amount = required_amount.saturating_sub(available_amount);
 
-            market.buy(
-                WareAmount::new(input.ware(), missing_amount),
-                &mut self.input_storage,
-                &mut self.money,
-            );
+            let ware_amount = WareAmount::new(input.ware(), missing_amount);
+            let actual_amount = market.buy(ware_amount, &mut self.input_storage, &mut self.money);
+            let actual_ware_amount = ware_amount.with_amount(actual_amount);
+            debug!("Bought {actual_ware_amount} (wanted {missing_amount})");
         }
     }
 

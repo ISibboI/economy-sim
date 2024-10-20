@@ -6,6 +6,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use recipe::{ProductionRate, Recipe};
 use simplelog::TermLogger;
 use statistics::factory_money_statistics::FactoryMoneyStatistics;
+use time::DateTime;
 use ware::{Ware, WareAmount};
 use world::World;
 
@@ -21,7 +22,7 @@ mod world;
 
 fn main() {
     TermLogger::init(
-        log::LevelFilter::Info,
+        log::LevelFilter::Debug,
         Default::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
@@ -38,12 +39,12 @@ fn main() {
                     ProductionRate::new(100),
                 ),
                 Money::from(100),
-                Money::from(1_000),
+                Money::from(10_000),
             ),
             Factory::new(
                 Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
                 Money::from(100),
-                Money::from(1_000),
+                Money::from(10_000),
             ),
             Factory::new(
                 Recipe::new(
@@ -58,7 +59,7 @@ fn main() {
                     ProductionRate::new(10),
                 ),
                 Money::from(100),
-                Money::from(1_000),
+                Money::from(10_000),
             ),
         ],
         vec![Box::new(FactoryMoneyStatistics::new("factory_money.svg"))],
@@ -68,10 +69,8 @@ fn main() {
     let mut rng = Xoshiro256PlusPlus::from_entropy();
 
     info!("Advancing hour");
-    world.advance_hour(&mut rng);
+    world.advance_time(DateTime::from_hours(10), &mut rng);
 
     info!("Finalising statistics");
     world.finalise_statistics();
-
-    info!("World:\n{world:?}");
 }
