@@ -35,10 +35,12 @@ fn main() {
                 ProductionRate::new(100),
             ),
             Money::from(100),
+            Money::from(1_000),
         ),
         Factory::new(
             Recipe::new([], [WareAmount::new(Ware::Seed, 1)], ProductionRate::new(1)),
             Money::from(100),
+            Money::from(1_000),
         ),
         Factory::new(
             Recipe::new(
@@ -53,6 +55,7 @@ fn main() {
                 ProductionRate::new(10),
             ),
             Money::from(100),
+            Money::from(1_000),
         ),
     ]);
 

@@ -23,14 +23,14 @@ pub struct Factory {
 }
 
 impl Factory {
-    pub fn new(recipe: Recipe, hourly_wages: Money) -> Self {
+    pub fn new(recipe: Recipe, hourly_wages: Money, starting_money: Money) -> Self {
         assert!(hourly_wages % recipe.rate().per_hour() == Money::ZERO);
         Self {
             recipe,
             input_storage: Default::default(),
             output_storage: Default::default(),
             hourly_wages,
-            money: Money::ZERO,
+            money: starting_money,
         }
     }
 
