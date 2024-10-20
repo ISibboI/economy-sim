@@ -1,3 +1,4 @@
+use consumer::Consumer;
 use factory::Factory;
 use log::info;
 use money::Money;
@@ -10,6 +11,7 @@ use time::DateTime;
 use ware::{Ware, WareAmount};
 use world::World;
 
+mod consumer;
 mod factory;
 mod market;
 mod money;
@@ -62,6 +64,10 @@ fn main() {
                 Money::from(10_000),
             ),
         ],
+        [Consumer::new(
+            WareAmount::new(Ware::Apple, 10),
+            Money::from(2),
+        )],
         vec![Box::new(FactoryMoneyStatistics::new("factory_money.svg"))],
     );
 

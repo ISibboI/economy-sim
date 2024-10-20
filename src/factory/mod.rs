@@ -155,8 +155,7 @@ impl Factory {
                 let required_amount = input.amount() * middle;
                 let available_amount = self.input_storage.ware_amount(input.ware()).amount();
                 let missing_amount = required_amount.saturating_sub(available_amount);
-                let (_, price) =
-                    market.calculate_price(WareAmount::new(input.ware(), missing_amount));
+                let (_, price) = market.total_price(WareAmount::new(input.ware(), missing_amount));
                 total_price += price;
             }
 

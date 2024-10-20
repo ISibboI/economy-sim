@@ -118,7 +118,41 @@ impl Market {
         bought_amount
     }
 
-    pub fn calculate_price(&mut self, ware_amount: WareAmount) -> (u64, Money) {
+    pub fn consume_at_current_price(&mut self, ware_amount: WareAmount) -> u64 {
+        assert!(self.market_offers_sorted);
+
+        let bought_amount = if let Some(offers) = self.offers.get_mut(&ware_amount.ware()) {
+            if let Some(offer) = offers.last_mut() {
+                let offer_buy_amount = offer.amount.min(ware_amount.amount());
+                let offer_sourcing_cost = offer.price_per_item * offer_buy_amount;
+
+                if let Some(money_transactions) =
+                    self.money_transactions.get_mut(&offer.source_factory)
+                {
+                    money_transactions.push(offer_sourcing_cost);
+                } else {
+                    self.money_transactions
+                        .insert(offer.source_factory, vec![offer_sourcing_cost]);
+                }
+
+                offer.amount -= offer_buy_amount;
+
+                if offer.amount == 0 {
+                    offers.pop();
+                }
+
+                offer_buy_amount
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
+        bought_amount
+    }
+
+    pub fn total_price(&mut self, ware_amount: WareAmount) -> (u64, Money) {
         assert!(self.market_offers_sorted);
         let mut total_sourcing_cost = Money::ZERO;
         let bought_amount = if let Some(offers) = self.offers.get_mut(&ware_amount.ware()) {
@@ -141,6 +175,14 @@ impl Market {
         };
 
         (bought_amount, total_sourcing_cost)
+    }
+
+    pub fn current_price(&self, ware: Ware) -> Option<Money> {
+        assert!(self.market_offers_sorted);
+        match self.offers.get(&ware) {
+            Some(offers) => offers.last().map(|offer| offer.price_per_item),
+            None => None,
+        }
     }
 
     pub fn transfer_money(&mut self, money: &mut Money, factory_id: FactoryId) {

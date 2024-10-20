@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
         "Color",
-        "simplelog"
+        "Seedable",
+        "simplelog",
+        "xoshiro"
     ]
 }

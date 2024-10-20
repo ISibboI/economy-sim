@@ -5,6 +5,7 @@ use log::debug;
 use rand::Rng;
 
 use crate::{
+    consumer::Consumer,
     factory::{Factory, FactoryId},
     market::Market,
     statistics::Statistics,
@@ -14,6 +15,7 @@ use crate::{
 #[derive(Debug)]
 pub struct World {
     factories: OptionStableVec<Factory, FactoryId>,
+    consumers: Vec<Consumer>,
     market: Market,
     time: DateTime,
     statistics: Vec<Box<dyn Statistics>>,
@@ -22,10 +24,12 @@ pub struct World {
 impl World {
     pub fn new(
         factories: impl IntoIterator<Item = Factory>,
+        consumers: impl IntoIterator<Item = Consumer>,
         statistics: Vec<Box<dyn Statistics>>,
     ) -> Self {
         Self {
             factories: factories.into_iter().collect(),
+            consumers: consumers.into_iter().collect(),
             market: Default::default(),
             time: DateTime::ZERO,
             statistics,
@@ -67,8 +71,12 @@ impl World {
         debug!("{}", self.market);
 
         // 3. Inputs are bought from the market (in random order).
+        //    First, factories buy required inputs, and then consumers consume.
         for factory in self.factories.iter_elements_mut() {
             factory.buy_inputs(&mut self.market);
+        }
+        for consumer in &self.consumers {
+            consumer.consume(&mut self.market);
         }
 
         // 4. Money is returned from the market to the factories.
